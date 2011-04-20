@@ -1,0 +1,45 @@
+/****************************************************************************
+ * Stackjacking:
+ * A grsecurity/PaX exploit framework
+ *
+ * As demonstrated at Hackito Ergo Sum and Immunity INFILTRATE, April 2011
+ *
+ * Dan Rosenberg (dan.j.rosenberg@gmail.com)
+ * Jon Oberheide (jon@oberheide.org)
+ ***************************************************************************/
+
+Congratulations on reading the README.  Your prize is actually understanding
+what this code is, and what it isn't.
+
+There are no 0-days to be found here.  What's included is a framework that we
+used to exploit a grsecurity-hardened Linux kernel given the existence of an
+arbitrary kernel write and the leakage of uninitialized structure members from
+a process' kernel stack.  To be clear, this attack vector is completely
+unnecessary when exploiting a vanilla Linux kernel, since an arbitrary write is
+more than sufficient to get root, given the vast amount of useful targeting
+information Linux gives out via /proc, etc.  Likewise, the information leakage
+performed by libkstack is also unnecessary on vanilla, since there are much
+easier ways of getting this information.  However, due to GRKERNSEC_HIDESYM,
+which aims to make the kernel a black box for attackers by removing all known
+sources of information leakage, and PAX_KERNEXEC, which makes global data
+structures with known locations (such as the IDT) read-only, some hoops need to
+be jumped through in order to actually find a good target for a kernel write
+vulnerability.
+
+The specific attack vectors that we used during the presentation have since
+been mitigated by moving the thread_info struct off the kernel stack and by
+implementing kernel stack entry point randomization for 64-bit platforms.  This
+code is being released because people asked for it and because pieces of it,
+especially libkstack, may be useful for future exploits.
+
+If you'd like to use this, you'll need to plug in an arbitrary kernel write
+into the kernel_write() function in util.c, and a kernel stack leak into
+leak_bytes() in leak.c.  A sample suitable leak can be found in the examples/
+directory.  To build the exploit, just run "make".
+
+For details on the techniques used and the implementation, see the comments in
+the source code.
+
+TODO:
+-Detection of 4K vs. 8K kernel stacks (mostly done)
+-Support for partial (smaller than word) leaks (done, omitted for ease of use)
